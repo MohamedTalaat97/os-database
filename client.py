@@ -1,7 +1,28 @@
 import zmq
-import time
-
+from time import sleep
+###########################################################
+#defining port numbers port_1 --> master , port_2, port_3 -> slaves
+port_1 = "5555"
+port_2 = "5556"
+port_3 ="5557"
+###################################################SOCKETS
+context_1 = zmq.Context()
+socket_master = context_1.socket(zmq.REQ)
+socket_master.connect ("tcp://localhost:%s" % port_1)
 ###############################################################################
+context_2 = zmq.Context()
+socket_2 = context_2.socket(zmq.REQ)
+socket_2.connect ("tcp://localhost:%s" % port_2)
+###########################################################
+context_3 = zmq.Context()
+socket_3 = context_3.socket(zmq.REQ)
+socket_3.connect ("tcp://localhost:%s" % port_3)
+#################################################33333
+sockets=[]
+sockets.append(socket_2)
+sockets.append(socket_3)
+sockets.append(socket_master)
+#######################################################################
 def sign_up(socket):
     #1- Ask user for data
       full_name = input("Enter your full name: ")
@@ -14,142 +35,62 @@ def sign_up(socket):
       data.append(email)
       data.append(address)
       data.append(password)
-      socket.send_pyobj(data)
+      data.append(1)
+      socket_master.send_pyobj(data)
       #3- get reply from master
-
-
-      reply= socket.recv()
-      print("ay7aga")
-      print("reply from server ", reply)
+      message=socket.recv()
+      print(message)
       return
 ###############################################################################
-def sign_in(socket):
+def sign_in(sockets):
       #1- Ask user for Authentication data 
       full_name = input("Enter your full name: ")
       password = input("Enter your password: ")
+      email = "tempmail"
+      address="tempaddress"
       #2- send retreive query to server and slaves 
       data =[]
       data.append(full_name)
+      data.append(email)
+      data.append(address)
       data.append(password)
-      socket.send_pyobj(data)
-      #3- get reply from server and slaves
-      reply = socket.recv()    
-      print("reply from server ", reply)
-
-      
-      #3- if user not exist 
-      # ask user to sign up
-      
-      #4- if user exit verify password
-      
-      #5- if correct password print sign in successfully
-      
-      #6- if wrong password print incorrect password
+      data.append(2)
+      i=0
+      while(1):
+          sockets[i].send_pyobj(data)
+          poller=zmq.Poller()
+          poller.register(sockets[i],zmq.POLLIN)
+          if (poller.poll(1*1000)):
+              sleep(1)
+              message= sockets[i].recv()
+              print(message)
+              break   
+          else:
+              if i == 2:
+                  i=-1
+          i+=1
+                  
+            
       return    
          
       
-    
-
-    
-
-###############################################################################
-def delete_account(socket_master):
-    #1- sign_in
-    sign_in()
-    #2- send delete query to master
-    socket_master.send ("Delete query")
-    #3 receiving reply form master
-    reply_master = socket_master.recv()
-    print("reply from master "+ reply_master)
-    return
 ###############################################################################
 def main():
-    #defining port numbers port_1 --> master , port_2, port_3 -> slaves
-    port_1 = "5555"
-    port_2 = "5556"
-    port_3 = "5557"
-    
-    #connecting to master and slaves
-    context = zmq.Context()
-    print ("Connecting to Master...")
-    socket_master = context.socket(zmq.REQ)
-    '''
-    socket_slave_1 = context.socket(zmq.REQ)
-    socket_slave_2 = context.socket(zmq.REQ)
-    '''
-    socket_master.connect ("tcp://localhost:%s" % port_1)
-    socket_master.connect ("tcp://localhost:%s" % port_2)
-    socket_master.connect ("tcp://localhost:%s" % port_3)
-    print ("Connecting to Slaves...")
-    '''
-    socket_slave_1.connect ("tcp://localhost:%s" % port_2)
-    socket_slave_2.connect ("tcp://localhost:%s" % port_3)
-    '''
+  
     ###########################################################################
     #taking user request
     
     while(True):
-       choice = input("To Sign_Up press 1 " + "To Sign_In press 2 " + "To Delete your account press 3 \n")
+       choice = input("To Sign_Up press 1 " + "To Sign_In press 2 \n")
        
        #processing user choice
        ########################################################################
        if choice == '1':
-          #poll to see if master is ready
-          socket = None 
-          #sign_up
-          sign_up(socket_master)
+          sign_up(sockets[0])
        ######################################################################## 
        if choice == '2':
-          #poll to see if any sever is ready
-          socket = None 
-          while True:
-              try:
-                 socket_master.send_string ("Are You Ready !!",flags=zmq.NOBLOCK)
-                 time.sleep(1)
-                 reply_master=socket_master.recv(flags=zmq.NOBLOCK)
-                 print ("received " , reply_master ," from master")
-                 if int(reply_master) == 1:
-                     socket= socket_master
-                     break
-              except zmq.Again as e:
-                 e="Master is busy right now !!"
-                 print(e)
-              try:
-                 socket_slave_1.send_string ("Are You Ready !!",flags=zmq.NOBLOCK)
-                 time.sleep(1)
-                 reply_slave=socket_slave_1.recv(flags=zmq.NOBLOCK)
-                 print ("received " ,reply_slave," from slave_1")
-                 if int(reply_slave) == 1:
-                     socket= socket_slave_1
-                     break
-              except zmq.Again as e:
-                 e="slave_1 is busy right now !!"
-                 print(e)             
-              try:
-                 socket_slave_2.send_string ("Are You Ready !!",flags=zmq.NOBLOCK)
-                 time.sleep(1)
-                 reply_slave=socket_slave_2.recv(flags=zmq.NOBLOCK)
-                 print ("received " ,reply_slave," from master")
-                 if int(reply_slave) == 1:
-                     socket= socket_slave_2
-                     break
-              except zmq.Again as e:
-                 e="slave_2 is busy right now !!"
-                 print(e)
-                 
-
-                  
-                  
-          
-                 
-          #sign_in
-          sign_in(socket)
-       if choice == '3':
-          #Delete account
-          delete_account(socket_master)
-       
-      
-    
+          sign_in(sockets)
+  
 ###############################################################################
 main()
       
