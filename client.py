@@ -19,9 +19,10 @@ socket_3 = context_3.socket(zmq.REQ)
 socket_3.connect ("tcp://localhost:%s" % port_3)
 #################################################33333
 sockets=[]
+sockets.append(socket_master)
 sockets.append(socket_2)
 sockets.append(socket_3)
-sockets.append(socket_master)
+
 #######################################################################
 def sign_up(socket):
     #1- Ask user for data
@@ -36,7 +37,7 @@ def sign_up(socket):
       data.append(address)
       data.append(password)
       data.append(1)
-      socket_master.send_pyobj(data)
+      socket.send_pyobj(data)
       #3- get reply from master
       message=socket.recv()
       print(message)

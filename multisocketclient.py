@@ -1,30 +1,17 @@
 import zmq
 from time import sleep
-port = "1111"
-context = zmq.Context()
-socket = context.socket(zmq.REQ)
-socket.connect ("tcp://localhost:%s" % port)
 
-'''
-port = "1111"
-context = zmq.Context()
-socket_1 = context.socket(zmq.REQ)
-socket_1.connect ("tcp://localhost:%s" % port)
-'''
-
-socket.send_string("socket 1")
-poller=zmq.Poller()
-poller.register(socket,zmq.POLLIN)
-while(1):
-    if (poller.poll(1*1000)):
-        sleep(1)
-        message= socket.recv()
-        print(message) 
-    else :print("sent failed , retrying")
+port_m = "5559"
+context_m = zmq.Context()
+socket_m = context_m.socket(zmq.REP) 
+socket_m.bind("tcp://*:%s" % port_m)
 
 
-'''
-socket_1.send_string("socket 2")
-msg=socket_1.recv()
+
+
+
+
+
+msg=socket_m.recv()
+socket_m.send_string("an el kbeer")
 print(msg)
-'''
