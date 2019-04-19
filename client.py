@@ -19,8 +19,9 @@ socket_3 = context_3.socket(zmq.REQ)
 socket_3.connect ("tcp://localhost:%s" % port_3)
 #################################################33333
 sockets=[]
-sockets.append(socket_master)
+
 sockets.append(socket_2)
+sockets.append(socket_master)
 sockets.append(socket_3)
 
 #######################################################################
@@ -87,7 +88,7 @@ def main():
        #processing user choice
        ########################################################################
        if choice == '1':
-          sign_up(sockets[0])
+          sign_up(sockets[1])
        ######################################################################## 
        if choice == '2':
           sign_in(sockets)

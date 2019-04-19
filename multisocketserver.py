@@ -1,13 +1,12 @@
 import zmq
 
-port_slaves = "5559" 
-context_s = zmq.Context()
-socket_s = context_s.socket(zmq.REQ) 
-socket_s.bind("tcp://localhost:%s" % port_slaves)
+port1 = "5559" 
+context = zmq.Context()
+print ("Connecting to server...")
+socket = context.socket(zmq.REQ)
+socket.connect ("tcp://localhost:%s" % port1)
 
-
-
-socket_s.send_string("master")
-
-
-msg=socket_s.recv()
+print ("Sending request ")
+socket.send_string ("Hello")
+    #  Get the reply.
+message = socket.recv()

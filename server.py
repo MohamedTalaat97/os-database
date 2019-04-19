@@ -7,17 +7,17 @@ import threading
 con = lite.connect('user.db')
 cur = con.cursor() 
 #####################################cleint port   
-'''
+
 port = "5555"
 context_c = zmq.Context()
 socket_c = context_c.socket(zmq.REP) 
 socket_c.bind("tcp://*:%s" % port)
-'''
+
 ##########################################slave Ports --add port for each slave
 port_slaves = "3333" 
 context_s = zmq.Context()
-socket_s = context_s.socket(zmq.REQ) 
-socket_s.bind("tcp://localhost:%s" % port_slaves)
+socket_s = context_s.socket(zmq.REP) 
+socket_s.bind("tcp://*:%s" % port_slaves)
 #####################################socket array for slaves
 slaveSockets =[]
 slaveSockets.append(socket_s)
@@ -25,8 +25,11 @@ slaveSockets.append(socket_s)
 nSlaves = 1 
 slaves=[]
 for i in range(nSlaves):
+   
     arr=[]
     slaves.append(arr)
+    
+print(len(slaves))    
 ################################################### sign up function --it adds querys to slave arrays
 def sign_up(data,cur,con):
     name = data[0];
@@ -38,7 +41,7 @@ def sign_up(data,cur,con):
     check = cur.fetchall()
     print(check)
     reply=''
-    print(cur.rowcount)
+ 
     if (len(check) != 0):
        reply = 'user already exists'
     else :   
@@ -74,40 +77,26 @@ def sign_in(data,cur):
     socket_c.send_string(reply)
     return
 ############################################# slave thread 
-def slaveThread():
+def slaveThread(socket,i):
     #check on the slaves array 
     #if there data send to salves throug poling
     #if sent remevo it from array
     #if not keep it 
     #if array empty sent are you ready
-    
-    while(1):     
-        for i in range( len(slaves)):
-            if (len(slaves[i])>0):
-                  slaveSockets[i].send_pyobj(slaves[i])
-                  poller=zmq.Poller()
-                  poller.register(slaveSockets[i],zmq.POLLIN)
-                  if (poller.poll(1*1000)):
-                      sleep(1)
-                      message= slaveSockets[i].recv()
-                      print(message)
-                      del slaves [i]
-                    
-                  else: 
-                      print('failed to send data to slave number ' + i)
-            else :
+    while(1):  
+        message= socket.recv()
+        print(message , "from slave")
+        if (len(slaves[i])>0):
+            socket.send_pyobj(slaves[i])
+            slaves[i].clear()
+                      
+        else :
                 message =[]
                 message.append('9')
-                slaveSockets[i].send_pyobj(message)
+                socket.send_pyobj(message)
+               
                 sleep(1)
-                poller=zmq.Poller()
-                poller.register(slaveSockets[i],zmq.POLLIN)
-                if (poller.poll(1*1000)):
-                      sleep(1)
-                      m= slaveSockets[i].recv()
-                      print(m)
-                else :
-                    print ('didnt receive from slave ')
+                
                      
 ##############################################
 def clientThread():
@@ -127,14 +116,15 @@ def clientThread():
 ############################################ start of program
               
 c1=threading.Thread(target = clientThread )
-#c2=threading.Thread(target = slaveThread )               
+c2=threading.Thread(target = slaveThread,args = (slaveSockets[0],0) )  
+             
                 
 c1.start()
-#c2.start()
+c2.start()
 
 
 c1.join()
-#c2.join()           
+c2.join()           
                 
         
            
